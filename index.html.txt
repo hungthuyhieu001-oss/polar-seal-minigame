@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Polar Seal TON - Earn PUP & TON</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-primary: #04293a;
+            --bg-secondary: #064663;
+            --hole-bg: #021e2c;
+            --gold: #f0b90b;
+            --pup-color: #9b59b6;
+            --ton-color: #0088cc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(145deg, #04293a 0%, #064663 50%, #0a6e8e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            touch-action: manipulation;
+            position: relative;
+        }
+
+        /* Background floating TON coins */
+        .bg-coins {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-coin {
+            position: absolute;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            animation: floatCoin 15s linear infinite;
+            opacity: 0.25;
+        }
+
+        @keyframes floatCoin {
+            0% {
+                transform: translateY(110vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateY(-10vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .game-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Header */
+        .game-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 14px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #a0d0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .player-name {
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .balances {
+            display: flex;
+            gap: 10px;
+        }
+
+        .balance-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 4px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .balance-item.pup {
+            border: 1px solid var(--pup-color);
+        }
+
+        .balance-item.ton {
+            border: 1px solid var(--ton-color);
+        }
+
+        .score-box {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .score-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(240, 185, 11, 0.4);
+        }
+
+        .timer-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            height: 100%;
+            background: #0ecb81;
+            border-radius: 3px;
+            transition: width 0.1s linear;
+        }
+
+        .timer-text {
+            text-align: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-top: 4px;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            aspect-ratio: 1;
+            max-width: 380px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hole {
+            position: relative;
+            background: radial-gradient(ellipse at center, #032535 0%, #010e16 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: inset 0 8px 20px rgba(0, 0, 0, 0.8), 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .mole {
+            position: absolute;
+            bottom: -80px;
+            width: 70%;
+            height: 70%;
+            transition: bottom 0.08s ease-out;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mole img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .mole.active {
+            bottom: -5px;
+            animation: molePop 0.15s ease-out;
+        }
+
+        .mole.hit {
+            bottom: -80px;
+            transition: bottom 0.05s ease-in;
+            filter: brightness(0.5) sepia(1) hue-rotate(-30deg) saturate(3);
+        }
+
+        @keyframes molePop {
+            0% { bottom: -80px; }
+            60% { bottom: 8px; }
+            100% { bottom: -5px; }
+        }
+
+        .hammer {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            font-size: 3rem;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            transition: transform 0.05s;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+        }
+
+        .hammer.smash {
+            transform: translate(-50%, -50%) rotate(10deg) scale(1.2);
+            transition: transform 0.05s;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-start {
+            background: var(--gold);
+            color: #1a1a2e;
+            box-shadow: 0 4px 15px rgba(240, 185, 11, 0.3);
+            width: 100%;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(240, 185, 11, 0.5);
+        }
+
+        .btn-start:active {
+            transform: scale(0.95);
+        }
+
+        .game-over-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .game-over-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .game-over-card {
+            background: linear-gradient(135deg, #04293a, #064663);
+            border-radius: 20px;
+            padding: 32px 24px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            max-width: 340px;
+            width: 90%;
+        }
+
+        .game-over-card h2 {
+            font-size: 2rem;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+
+        .game-over-card .final-score {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        .reward-earned {
+            font-size: 1rem;
+            margin-top: 10px;
+            color: #0ecb81;
+        }
+
+        .combo-text {
+            position: fixed;
+            pointer-events: none;
+            z-index: 150;
+            font-weight: 800;
+            animation: comboUp 0.8s ease-out forwards;
+        }
+
+        @keyframes comboUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(1.5); }
+        }
+
+        @media (max-width: 380px) {
+            .game-board {
+                gap: 8px;
+                padding: 4px;
+            }
+            .mole {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background coins -->
+    <div class="bg-coins" id="bgCoins"></div>
+
+    <div class="game-container" id="gameContainer">
+        <!-- Header -->
+        <div class="game-header">
+            <div class="player-info">
+                <div class="avatar" id="avatar">🦭</div>
+                <div class="player-name" id="playerName">Player</div>
+            </div>
+            <div class="balances">
+                <div class="balance-item pup" id="pupBalanceDisplay">
+                    <span>🪙</span> <span id="pupAmount">0</span> PUP
+                </div>
+                <div class="balance-item ton" id="tonBalanceDisplay">
+                    <span>💎</span> <span id="tonAmount">0</span> TON
+                </div>
+            </div>
+            <div class="score-box">
+                <div class="score-label">Score</div>
+                <div class="score-value" id="scoreDisplay">0</div>
+            </div>
+            <div class="score-box">
+                <div class="score-label">Best</div>
+                <div class="score-value" style="font-size:1.2rem; color:#0ecb81;" id="highScoreDisplay">0</div>
+            </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="timer-bar">
+            <div class="timer-fill" id="timerFill"></div>
+        </div>
+        <div class="timer-text" id="timerText">30s</div>
+
+        <!-- Game Board -->
+        <div class="game-board" id="gameBoard"></div>
+
+        <!-- Start Button -->
+        <button class="btn btn-start" id="startBtn">🔨 Start Game</button>
+    </div>
+
+    <!-- Hammer -->
+    <div class="hammer" id="hammer">🔨</div>
+
+    <!-- Game Over Overlay -->
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-card">
+            <h2 id="gameOverTitle">⏰ Time's Up!</h2>
+            <div class="label">Your Score</div>
+            <div class="final-score" id="finalScore">0</div>
+            <div class="reward-earned" id="rewardSummary"></div>
+            <div class="label" style="margin-top:8px;">High Score: <span id="gameOverHighScore">0</span></div>
+            <button class="btn btn-start" style="margin-top:20px;" id="restartBtn">🔄 Play Again</button>
+            <button class="btn" style="margin-top:10px; background:transparent; border:1px solid rgba(255,255,255,0.2); color:white; width:100%;" id="shareBtn">
+                📤 Share Score
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ============ IMAGE URLS ============
+        const BG_COIN_IMG = 'https://i.postimg.cc/WbVrRFjb/Chua-co-ten-(100-x-100-px)-(250-x-250-px).png';
+        const CHAR_TON_IMG = 'https://i.postimg.cc/YCqW95hP/1.png';   // Character 1: Coin TON -> reward 0.05 TON
+        const CHAR_ENEMY_IMG = 'https://i.postimg.cc/hGXQ8V8G/2.png'; // Character 2: Enemy -> instant lose
+        const CHAR_PUP_IMG = 'https://i.postimg.cc/k5L6TDwz/3.png';   // Character 3: Coin PUP -> reward 1 PUP
+
+        // ============ TELEGRAM INIT ============
+        const tg = window.Telegram?.WebApp;
+        let tgUser = null;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            tgUser = tg.initDataUnsafe?.user;
+            tg.setHeaderColor('#04293a');
+            tg.setBackgroundColor('#04293a');
+            tg.enableClosingConfirmation();
+            tg.MainButton.setText('🦭 Polar Seal TON');
+            tg.MainButton.show();
+            tg.MainButton.onClick(() => startGame());
+        }
+
+        // ============ PLAYER INFO ============
+        const playerNameEl = document.getElementById('playerName');
+        const avatarEl = document.getElementById('avatar');
+        if (tgUser) {
+            playerNameEl.textContent = tgUser.first_name || 'Player';
+            if (tgUser.photo_url) {
+                avatarEl.innerHTML = `<img src="${tgUser.photo_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else {
+                avatarEl.textContent = '🦭';
+            }
+        } else {
+            playerNameEl.textContent = 'Player';
+            avatarEl.textContent = '🦭';
+        }
+
+        // ============ GAME STATE ============
+        const GAME_DURATION = 30;
+        const MOLE_APPEAR_MIN = 600;
+        const MOLE_APPEAR_MAX = 1500;
+        const MOLE_STAY_MIN = 500;
+        const MOLE_STAY_MAX = 1000;
+        const POINTS_PER_HIT = 10;
+        const POINTS_PER_MISS = -5;
+
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('polarSealHighScore') || '0');
+        let timeLeft = GAME_DURATION;
+        let gameActive = false;
+        let gameInterval = null;
+        let timerInterval = null;
+        let activeMoles = new Set();
+        let comboCount = 0;
+        let lastHitTime = 0;
+
+        // Coin balances (persistent)
+        let pupBalance = parseFloat(localStorage.getItem('polarSealPup') || '0');
+        let tonBalance = parseFloat(localStorage.getItem('polarSealTon') || '0');
+        let sessionPupEarned = 0;
+        let sessionTonEarned = 0;
+        let gameOverReason = 'timeout'; // 'timeout' or 'enemy'
+
+        // ============ CHARACTER TYPES ============
+        const CHAR_TYPES = [
+            { img: CHAR_TON_IMG, name: 'TON', reward: 0.05, rewardType: 'TON', probability: 0.35 },
+            { img: CHAR_PUP_IMG, name: 'PUP', reward: 1, rewardType: 'PUP', probability: 0.35 },
+            { img: CHAR_ENEMY_IMG, name: 'ENEMY', reward: 0, rewardType: 'INSTANT_LOSE', probability: 0.30 }
+        ];
+
+        function getRandomCharacter() {
+            const rand = Math.random();
+            let cumulative = 0;
+            for (const char of CHAR_TYPES) {
+                cumulative += char.probability;
+                if (rand <= cumulative) return char;
+            }
+            return CHAR_TYPES[0];
+        }
+
+        // DOM elements
+        const gameBoard = document.getElementById('gameBoard');
+        const startBtn = document.getElementById('startBtn');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const timerFill = document.getElementById('timerFill');
+        const timerText = document.getElementById('timerText');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const finalScoreEl = document.getElementById('finalScore');
+        const gameOverHighScoreEl = document.getElementById('gameOverHighScore');
+        const restartBtn = document.getElementById('restartBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const hammer = document.getElementById('hammer');
+        const pupAmountEl = document.getElementById('pupAmount');
+        const tonAmountEl = document.getElementById('tonAmount');
+        const rewardSummary = document.getElementById('rewardSummary');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+
+        // Update balance displays
+        function updateBalanceDisplay() {
+            pupAmountEl.textContent = Math.floor(pupBalance);
+            tonAmountEl.textContent = tonBalance.toFixed(2);
+        }
+        updateBalanceDisplay();
+        highScoreDisplay.textContent = highScore;
+        gameOverHighScoreEl.textContent = highScore;
+
+        // ============ BACKGROUND COINS ============
+        const bgCoinsContainer = document.getElementById('bgCoins');
+        function createBackgroundCoin() {
+            const coin = document.createElement('div');
+            coin.className = 'bg-coin';
+            coin.style.backgroundImage = `url('${BG_COIN_IMG}')`;
+            coin.style.left = Math.random() * 100 + '%';
+            coin.style.width = (36 + Math.random() * 28) + 'px';
+            coin.style.height = coin.style.width;
+            coin.style.animationDuration = (10 + Math.random() * 15) + 's';
+            coin.style.animationDelay = Math.random() * 5 + 's';
+            bgCoinsContainer.appendChild(coin);
+            setTimeout(() => { if (coin.parentNode) coin.remove(); }, 25000);
+        }
+        for (let i = 0; i < 8; i++) setTimeout(() => createBackgroundCoin(), i * 400);
+        setInterval(createBackgroundCoin, 3000);
+
+        // ============ GAME BOARD ============
+        const HOLES = 9;
+        gameBoard.innerHTML = '';
+        const moleCharData = new Map(); // Map to store character type for each mole
+
+        for (let i = 0; i < HOLES; i++) {
+            const hole = document.createElement('div');
+            hole.className = 'hole';
+            hole.dataset.index = i;
+
+            const mole = document.createElement('div');
+            mole.className = 'mole';
+            mole.dataset.index = i;
+
+            const img = document.createElement('img');
+            img.src = CHAR_TON_IMG; // default
+            img.alt = 'character';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            img.style.pointerEvents = 'none';
+            mole.appendChild(img);
+
+            hole.appendChild(mole);
+            hole.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                whackMole(i, mole);
+            });
+            gameBoard.appendChild(hole);
+        }
+
+        const moles = document.querySelectorAll('.mole');
+
+        // ============ HAMMER CURSOR ============
+        let hammerVisible = false;
+        document.addEventListener('pointermove', (e) => {
+            if (!gameActive && !hammerVisible) return;
+            hammer.style.left = e.clientX + 'px';
+            hammer.style.top = e.clientY + 'px';
+            if (gameActive && !hammerVisible) {
+                hammer.style.display = 'block';
+                hammerVisible = true;
+            }
+        });
+        document.addEventListener('pointerdown', (e) => {
+            if (!gameActive) return;
+            hammer.classList.add('smash');
+            setTimeout(() => hammer.classList.remove('smash'), 150);
+        });
+        gameBoard.addEventListener('pointerenter', () => {
+            if (gameActive) {
+                hammer.style.display = 'block';
+                hammerVisible = true;
+                document.body.style.cursor = 'none';
+            }
+        });
+        gameBoard.addEventListener('pointerleave', () => {
+            hammer.style.display = 'none';
+            hammerVisible = false;
+            document.body.style.cursor = 'default';
+        });
+
+        // ============ MOLE SPAWNING ============
+        function spawnMole() {
+            if (!gameActive || activeMoles.size >= 3) return;
+            const available = [];
+            for (let i = 0; i < HOLES; i++) if (!activeMoles.has(i)) available.push(i);
+            if (available.length === 0) return;
+
+            const index = available[Math.floor(Math.random() * available.length)];
+            const mole = moles[index];
+
+            // Random character type
+            const charType = getRandomCharacter();
+            moleCharData.set(index, charType);
+
+            // Set image
+            const img = mole.querySelector('img');
+            if (img) {
+                img.src = charType.img;
+            }
+
+            mole.classList.add('active');
+            mole.classList.remove('hit');
+            activeMoles.add(index);
+
+            const stayTime = MOLE_STAY_MIN + Math.random() * (MOLE_STAY_MAX - MOLE_STAY_MIN);
+            const timeout = setTimeout(() => hideMole(index, mole, false), stayTime);
+            mole._hideTimeout = timeout;
+        }
+
+        function hideMole(index, mole, wasHit) {
+            if (mole._hideTimeout) {
+                clearTimeout(mole._hideTimeout);
+                mole._hideTimeout = null;
+            }
+            if (wasHit) {
+                mole.classList.add('hit');
+                setTimeout(() => {
+                    mole.classList.remove('active', 'hit');
+                    activeMoles.delete(index);
+                    moleCharData.delete(index);
+                }, 200);
+            } else {
+                mole.classList.remove('active');
+                activeMoles.delete(index);
+                moleCharData.delete(index);
+                if (gameActive) {
+                    updateScore(POINTS_PER_MISS);
+                    resetCombo();
+                }
+            }
+        }
+
+        // ============ WHACKING ============
+        function whackMole(index, mole) {
+            if (!gameActive) return;
+            if (!activeMoles.has(index)) {
+                updateScore(POINTS_PER_MISS);
+                resetCombo();
+                document.body.style.animation = 'shake 0.3s ease';
+                return;
+            }
+
+            const charType = moleCharData.get(index);
+
+            // Check if it's the enemy (instant lose)
+            if (charType && charType.rewardType === 'INSTANT_LOSE') {
+                // Hit enemy -> lose immediately
+                updateScore(POINTS_PER_MISS);
+                resetCombo();
+                hideMole(index, mole, true);
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                // End game immediately
+                gameOverReason = 'enemy';
+                endGame();
+                return;
+            }
+
+            // Hit reward character
+            const now = Date.now();
+            comboCount = (now - lastHitTime < 1000) ? comboCount + 1 : 1;
+            lastHitTime = now;
+            const points = POINTS_PER_HIT * comboCount;
+            updateScore(points);
+            if (comboCount > 1) showComboText(mole, comboCount, points);
+
+            // Give reward
+            if (charType) {
+                if (charType.rewardType === 'TON') {
+                    tonBalance += charType.reward;
+                    sessionTonEarned += charType.reward;
+                    showCoinReward(mole, 'TON', charType.reward);
+                } else if (charType.rewardType === 'PUP') {
+                    pupBalance += charType.reward;
+                    sessionPupEarned += charType.reward;
+                    showCoinReward(mole, 'PUP', charType.reward);
+                }
+                updateBalanceDisplay();
+            }
+
+            hideMole(index, mole, true);
+
+            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+        }
+
+        function showCoinReward(mole, type, amount) {
+            const rect = mole.getBoundingClientRect();
+            const div = document.createElement('div');
+            div.className = 'combo-text';
+            div.textContent = type === 'TON' ? `+${amount.toFixed(2)} TON` : `+${amount} PUP`;
+            div.style.left = rect.left + rect.width/2 + 'px';
+            div.style.top = rect.top + 'px';
+            div.style.color = type === 'PUP' ? '#c39bd3' : '#0088cc';
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 800);
+        }
+
+        function updateScore(points) {
+            score = Math.max(0, score + points);
+            scoreDisplay.textContent = score;
+            scoreDisplay.style.transform = 'scale(1.3)';
+            setTimeout(() => scoreDisplay.style.transform = 'scale(1)', 150);
+        }
+
+        function resetCombo() {
+            comboCount = 0;
+            lastHitTime = 0;
+        }
+
+        function showComboText(mole, combo, points) {
+            const rect = mole.getBoundingClientRect();
+            const div = document.createElement('div');
+            div.className = 'combo-text';
+            div.textContent = `${combo}x COMBO! +${points}`;
+            div.style.left = rect.left + rect.width/2 + 'px';
+            div.style.top = rect.top + 'px';
+            div.style.color = combo >= 5 ? '#ff4444' : combo >= 3 ? '#f0b90b' : '#0ecb81';
+            div.style.fontSize = (1 + combo * 0.2) + 'rem';
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 800);
+        }
+
+        // ============ TIMER ============
+        function updateTimer() {
+            timeLeft--;
+            timerText.textContent = timeLeft + 's';
+            const pct = (timeLeft / GAME_DURATION) * 100;
+            timerFill.style.width = pct + '%';
+            if (pct < 25) timerFill.style.background = '#f6465d';
+            else if (pct < 50) timerFill.style.background = '#f0b90b';
+            else timerFill.style.background = '#0ecb81';
+            if (timeLeft <= 0) {
+                gameOverReason = 'timeout';
+                endGame();
+            }
+        }
+
+        // ============ GAME FLOW ============
+        function startGame() {
+            score = 0;
+            timeLeft = GAME_DURATION;
+            gameActive = true;
+            activeMoles.clear();
+            moleCharData.clear();
+            comboCount = 0;
+            sessionPupEarned = 0;
+            sessionTonEarned = 0;
+            gameOverReason = 'timeout';
+
+            moles.forEach(m => {
+                m.classList.remove('active', 'hit');
+                if (m._hideTimeout) { clearTimeout(m._hideTimeout); m._hideTimeout = null; }
+                const img = m.querySelector('img');
+                if (img) img.src = CHAR_TON_IMG;
+            });
+
+            scoreDisplay.textContent = '0';
+            timerText.textContent = timeLeft + 's';
+            timerFill.style.width = '100%';
+            timerFill.style.background = '#0ecb81';
+            gameOverOverlay.classList.remove('active');
+            startBtn.style.display = 'none';
+            hammer.style.display = 'block';
+            hammerVisible = true;
+            document.body.style.cursor = 'none';
+
+            setTimeout(() => spawnMole(), 200);
+            setTimeout(() => spawnMole(), 500);
+            scheduleNextSpawn();
+            timerInterval = setInterval(updateTimer, 1000);
+
+            if (tg) { tg.MainButton.setText('🦭 Playing...'); tg.MainButton.disable(); }
+        }
+
+        function scheduleNextSpawn() {
+            if (!gameActive) return;
+            const delay = MOLE_APPEAR_MIN + Math.random() * (MOLE_APPEAR_MAX - MOLE_APPEAR_MIN);
+            gameInterval = setTimeout(() => { spawnMole(); scheduleNextSpawn(); }, delay);
+        }
+
+        function endGame() {
+            gameActive = false;
+            if (gameInterval) clearTimeout(gameInterval);
+            if (timerInterval) clearInterval(timerInterval);
+
+            moles.forEach(m => {
+                m.classList.remove('active', 'hit');
+                if (m._hideTimeout) { clearTimeout(m._hideTimeout); m._hideTimeout = null; }
+            });
+            activeMoles.clear();
+            moleCharData.clear();
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('polarSealHighScore', highScore);
+                highScoreDisplay.textContent = highScore;
+            }
+            gameOverHighScoreEl.textContent = highScore;
+
+            finalScoreEl.textContent = score;
+
+            if (gameOverReason === 'enemy') {
+                gameOverTitle.textContent = '💀 Game Over!';
+                rewardSummary.innerHTML = 'You hit the enemy! <br>Instant loss!';
+            } else {
+                gameOverTitle.textContent = "⏰ Time's Up!";
+                if (sessionPupEarned > 0 || sessionTonEarned > 0) {
+                    rewardSummary.innerHTML = `🪙 +${sessionPupEarned} PUP & 💎 +${sessionTonEarned.toFixed(2)} TON earned!`;
+                } else {
+                    rewardSummary.innerHTML = '';
+                }
+            }
+
+            gameOverOverlay.classList.add('active');
+            startBtn.style.display = 'block';
+            timerText.textContent = '0s';
+            timerFill.style.width = '0%';
+            hammer.style.display = 'none';
+            hammerVisible = false;
+            document.body.style.cursor = 'default';
+
+            localStorage.setItem('polarSealPup', pupBalance);
+            localStorage.setItem('polarSealTon', tonBalance);
+            updateBalanceDisplay();
+
+            if (tg) {
+                tg.MainButton.setText('🔄 Play Again');
+                tg.MainButton.enable();
+                tg.MainButton.onClick(() => startGame());
+                if (score > 0) {
+                    tg.sendData(JSON.stringify({
+                        game: 'polar-seal-ton',
+                        score: score,
+                        pupEarned: sessionPupEarned,
+                        tonEarned: sessionTonEarned,
+                        totalPup: pupBalance,
+                        totalTon: tonBalance,
+                        endReason: gameOverReason
+                    }));
+                }
+            }
+        }
+
+        // ============ EVENT LISTENERS ============
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+
+        shareBtn.addEventListener('click', () => {
+            const text = gameOverReason === 'enemy'
+                ? `💀 I hit an enemy in Polar Seal TON! Score: ${score}. Play now!`
+                : `🦭 I scored ${score} points in Polar Seal TON!\nEarned ${sessionPupEarned} PUP & ${sessionTonEarned.toFixed(2)} TON.\nPlay now!`;
+            if (tg) {
+                tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent('https://t.me/your_bot/polarseal')}&text=${encodeURIComponent(text)}`);
+            } else if (navigator.share) {
+                navigator.share({ title: 'Polar Seal TON', text: text }).catch(() => {});
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); if (!gameActive) startGame(); }
+            if (gameActive && e.key >= '1' && e.key <= '9') whackMole(parseInt(e.key)-1, moles[parseInt(e.key)-1]);
+        });
+
+        // Shake animation
+        const styleEl = document.createElement('style');
+        styleEl.textContent = `@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }`;
+        document.head.appendChild(styleEl);
+
+        console.log('🦭 Polar Seal TON with custom images is ready!');
+    </script>
+</body>
+</html>
